@@ -88,8 +88,8 @@ if( $arg_mes ne ""
     } else {
 	$mes_mtime = $nowtime;
     }
-    open( LOCK, "> lock/meslock" );
-    flock( OUT, 2 );
+
+    &LOCK($lockfile);
 
     open( IN , "log/message.html" );
     open( OUT, "> log/tmp.$$" );
@@ -127,17 +127,12 @@ if( $arg_mes ne ""
     close(IN);
     close(OUT);
 
-    open(OUT, "log/message.html");
-    flock(OUT, 2);
     unlink( "log/message.html" );
-    flock(OUT, 8);
-    close(OUT);
 
     rename( "log/tmp.$$", "log/message.html" );
     utime( $mes_mtime,$mes_mtime, "log/message.html" );
 
-    flock(LOCK, 8);
-    close(LOCK);
+    &UNLOCK($lockfile);
 
     print <<END_OF_HTML;
     <SCRIPT LANGUAGE="JavaScript">

@@ -10,6 +10,7 @@ $MAXLINE  = 80;
 @SCOL = ( "black","green","red","blue","deeppink","oramgered",
 	 "vioret","purple","navy","maroon","coral" );
 $admin = "hirai\@eject.org";
+$lockfile = "lock/lockfile.lock";
 
 ## ----------------------------------
 $ENV{'TZ'} = "JST-9";
@@ -123,6 +124,8 @@ sub env
 }
 
 
+## ----------------------------------
+## クッキーライブラリ(for JavaScript)
 sub cookielib
 {
     print <<ENDEND;
@@ -151,6 +154,27 @@ function setCookie(key, val, tmp) {
 
 </SCRIPT>
 ENDEND
+}
+
+## ----------------------------------
+## ファイルロック
+sub LOCK#($lockfile)
+{
+    local( $lockfile, $count );
+    $lockfile = $_[0];
+    $count    = 0;
+    while ( !symlink("$$","$lockfile") ) {
+	if ( $count == 5 ) {
+	    &error("lock error!!!");
+	    exit(1);
+	}
+	$count++;
+	sleep(1);
+    }
+}
+sub UNLOCK#($lockfile)
+{
+    unlink($_[0]);
 }
 
 1;

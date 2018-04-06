@@ -47,7 +47,8 @@ ENDEND
 }
 if( $pro_icq ne "" ){
     print <<ENDEND;
-    <a href=# onMouseOver="window.status='ICQ ID = $pro_icq'; return true"
+    <a href="http://wwp.icq.com/$pro_icq" target="icq_win"
+     onMouseOver="window.status='ICQ ID = $pro_icq'; return true"
      title="ICQ ID = $pro_icq">
     (ICQ:$pro_icq)<IMG width=44 height=14 
     src="http://online.mirabilis.com/scripts/online.dll?icq=$pro_icq&amp;img=1online.gif&dmyarg=$nowtime"
