@@ -77,7 +77,7 @@ print <<ENDEND;
 </SCRIPT><HTML><BODY $BODYOPT>
 <FORM name="TM">
 <INPUT NAME="time" SIZE=4 value="wait">
-<A href=# onClick="return reload(1)">RELOAD</A>
+<A href=# onClick="return reload(1);">RELOAD</A>
 ENDEND
 #--------------    
 

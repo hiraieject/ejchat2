@@ -17,6 +17,8 @@ for( $i=0; $i<=$#wr_mes; $i++ ){
     $wr_mes[$i] = $j;
 }
 
+&cookielib();
+
 print "<HTML><BODY $BODYOPT SCROLL=NO>\n";
 
 $banner = "<table width=\"100%\"><tr>";
@@ -32,6 +34,9 @@ if( $arg_name eq "" ){
     } elsif( $arg_com eq "PROEDIT" ){
 	goto PROEDIT;
     } elsif( $arg_com eq "PROWRITE" ){
+	if( $form{'pr_cm'} eq "CANCEL" ){
+	    goto WRITE;
+	}
 	goto PROWRITE;
     } else {
 	goto WRITE;
@@ -46,15 +51,17 @@ if( $arg_name eq "" ){
 if( $arg_com eq "LOGIN" ){
     $arg_loginid = $nowtime;
     &mkarg();
-    print( "<SCRIPT LANGUAGE=\"JavaScript\">\n window.parent.location.href = \"chat.cgi$cgiarg\";\n</SCRIPT>\n" );
+
+    print <<ENDEND;
+<SCRIPT LANGUAGE="JavaScript">
+    window.parent.location.href = \"chat.cgi$cgiarg\";\n
+    setCookie("color","$arg_color");
+    setCookie("user","$arg_name");
+    </SCRIPT>
+ENDEND
+
     $fn = "users/".$arg_name."\@".$remote_addr."\@\@".$arg_loginid;
     &touch( $fn );
-    &cookielib();
-    print <<ENDEND;
-<SCRIPT LANGUAGE=\"JavaScript\">
-
-</SCRIPT>
-ENDEND
 
 } else {
     print( "<SCRIPT LANGUAGE=\"JavaScript\">\n window.parent.location.href = \"chat.cgi\";\n</SCRIPT>\n" );
@@ -101,7 +108,6 @@ if( $arg_mes ne ""
     $min01 = $min%10;
     $min10 = ($min-$min01)/10;
     $mon += 1;
-    $hour += 1;
     print( OUT "<font color=$arg_color>$arg_name<!-- $host --> " );
     print( OUT "($mon/$mday $hour:$min10$min01) : " );
     if( $arg_url ne "http://" ){
@@ -120,16 +126,23 @@ if( $arg_mes ne ""
     }
     close(IN);
     close(OUT);
-    close(LOCK);
 
+    open(OUT, "log/message.html");
+    flock(OUT, 2);
     unlink( "log/message.html" );
+    flock(OUT, 8);
+    close(OUT);
+
     rename( "log/tmp.$$", "log/message.html" );
     utime( $mes_mtime,$mes_mtime, "log/message.html" );
 
+    flock(LOCK, 8);
+    close(LOCK);
+
     print <<END_OF_HTML;
-<SCRIPT LANGUAGE="JavaScript">
-window.parent.seizon.reload(1);
-</SCRIPT>
+    <SCRIPT LANGUAGE="JavaScript">
+	window.parent.seizon.reload(1);
+    </SCRIPT>
 END_OF_HTML
 
 }
@@ -168,7 +181,7 @@ print <<END_OF_HTML;
 <FORM METHOD="POST" ACTION="write.cgi" name="FM">
 $banner
 <table height=60 CELLPADDING=6><tr>
- <td bgcolor=$COL[0] align=center valign=middle>
+<td bgcolor=$COL[0] align=center valign=middle>
 Enter Login Name <INPUT NAME="nm" SIZE=10>
 <br><font size="-1" color=red>$wr_mes[0]</font>
  <td bgcolor=$COL[1]  align=center valign=middle>
@@ -189,25 +202,33 @@ print <<END_OF_HTML;
 </FORM>
 </BODY>
 </HTML>
-
+<SCRIPT LANGUAGE="JavaScript">
+color = getCookie("color");
+user  = getCookie("user");
+if( color != "" ){ document.FM.cl.value = color; }
+if( user  != "" ){ document.FM.nm.value = user;  }
+</SCRIPT>
 END_OF_HTML
 exit(0);
 
 ##-----------------
+## プロフィール・エディット画面
 PROEDIT:
-$pro_message = "<font color=blue>profile editor for $arg_name</font>";
+
+$pro_message = "<B><U><font size=\"+1\" color=yellow>profile editor for $arg_name</font></U></B>";
 &pro_read($arg_name);
 PROEDIT_CONT:
-if( $pro_hp eq "" ){
-    $pro_hp = "http://";
-}
+if( $pro_hp eq "" ){ $pro_hp = "http://"; }
 if( $pro_hide  eq "on" ){ $hide  = "CHECKED"; }
 if( $pro_needp eq "on" ){ $needp = "CHECKED"; }
+
 print <<ENDEND;
+<table height=60 CELLPADDING=6><tr>
+<td bgcolor=$COL[1] align=left valign=middle>
 <FORM METHOD="POST" ACTION="write.cgi" name="FM">
 $pro_message
-<INPUT TYPE="submit" NAME="cm" VALUE="PROWRITE">
-<INPUT TYPE="submit" NAME="cm" VALUE="CANCEL">
+<INPUT TYPE="submit" NAME="pr_cm" VALUE="WRITE">
+<INPUT TYPE="submit" NAME="pr_cm" VALUE="CANCEL">
 <font size=-1><a href="mailto:$admin">mailto administrator</a></font>
 <BR>
 <NOBR>mail address <INPUT NAME="pr_ml" SIZE=20 value="$pro_mail"></NOBR>
@@ -221,14 +242,13 @@ $pro_message
 <INPUT TYPE="HIDDEN" NAME="nm" value="$arg_name">
 <INPUT TYPE="HIDDEN" NAME="id" value="$arg_loginid">
 <INPUT TYPE="HIDDEN" NAME="cl" value="$arg_color">
-<hr>
-</FORM>
-</BODY>
-</HTML>
+<INPUT TYPE="HIDDEN" NAME="cm" value="PROWRITE">
+</FORM></table></BODY></HTML>
 ENDEND
 exit(0);
 
 ##-----------------
+## プロフィール・書き込み
 PROWRITE:
 
 &pro_read($arg_name);

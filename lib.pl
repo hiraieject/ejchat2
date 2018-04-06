@@ -12,6 +12,7 @@ $MAXLINE  = 80;
 $admin = "hirai\@eject.org";
 
 ## ----------------------------------
+$ENV{'TZ'} = "JST-9";
 $nowtime = time();
 
 ## FORM 情報取得
